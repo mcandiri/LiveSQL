@@ -1,0 +1,12 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="cost-bar">
+    <div class="cost-bar-track">
+        <div class="cost-bar-fill" style="width: @Percentage%; background: @Color;"></div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public double Percentage { get; set; }
+    [Parameter] public string Color { get; set; } = "#58a6ff";
+}

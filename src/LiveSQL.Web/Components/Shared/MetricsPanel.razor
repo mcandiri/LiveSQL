@@ -1,0 +1,48 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="metrics-panel">
+    <h3 class="sidebar-section-title">Query Metrics</h3>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">@Metrics.TotalCost.ToString("F2")</div>
+            <div class="metric-label">Total Cost</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">@Metrics.ElapsedMs.ToString("F0")<span class="metric-unit">ms</span></div>
+            <div class="metric-label">Elapsed Time</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">@Metrics.RowsReturned.ToString("N0")</div>
+            <div class="metric-label">Rows Returned</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">@Metrics.OperatorCount</div>
+            <div class="metric-label">Operators</div>
+        </div>
+    </div>
+
+    @if (Nodes.Count > 0)
+    {
+        <h4 class="metrics-breakdown-title">Operation Breakdown</h4>
+        <div class="metrics-breakdown">
+            @foreach (var node in Nodes.Where(n => n.CostPercentage > 0).OrderByDescending(n => n.CostPercentage))
+            {
+                <div class="breakdown-row">
+                    <div class="breakdown-label">
+                        <span class="breakdown-dot" style="background: @node.Color;"></span>
+                        <span class="breakdown-name">@node.Label</span>
+                    </div>
+                    <div class="breakdown-bar-container">
+                        <div class="breakdown-bar" style="width: @node.CostPercentage%; background: @node.Color;"></div>
+                    </div>
+                    <span class="breakdown-pct">@node.CostPercentage.ToString("F0")%</span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public DemoPlanMetrics Metrics { get; set; } = new();
+    [Parameter] public List<FlowNode> Nodes { get; set; } = new();
+}

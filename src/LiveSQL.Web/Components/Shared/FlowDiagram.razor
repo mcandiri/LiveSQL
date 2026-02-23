@@ -1,0 +1,214 @@
+@namespace LiveSQL.Web.Components.Shared
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="flow-diagram-container" id="@containerId">
+    @if (Data != null)
+    {
+        <svg class="flow-svg" viewBox="0 0 @Data.ViewBoxWidth @Data.ViewBoxHeight"
+             preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="@($"ah-{containerId}")" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="#8b949e" />
+                </marker>
+                <filter id="@($"glow-{containerId}")">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+
+            @* Edges *@
+            @foreach (var edge in Data.Edges)
+            {
+                var eMidY = (edge.SourceY + edge.TargetY) / 2;
+                var ePath = $"M {edge.SourceX} {edge.SourceY} C {edge.SourceX} {eMidY}, {edge.TargetX} {eMidY}, {edge.TargetX} {edge.TargetY}";
+                var eDur = $"{2.0 / Math.Max(0.1, animationSpeed):F1}s";
+                var eBegin = $"{edge.SourceId * 0.3:F1}s";
+                var eLabelX = (edge.SourceX + edge.TargetX) / 2 + 8;
+                var eLabelY = eMidY;
+                <path d="@ePath" stroke="#30363d" stroke-width="2" fill="none"
+                      marker-end="@($"url(#{$"ah-{containerId}"})")" class="flow-edge" />
+                <circle r="4" fill="#58a6ff" class="flow-dot">
+                    <animateMotion dur="@eDur" repeatCount="indefinite" path="@ePath" begin="@eBegin" />
+                </circle>
+                @RenderSvgText(eLabelX, eLabelY, "edge-label", "#8b949e", "10", "", FormatRows(edge.Rows))
+            }
+
+            @* Nodes *@
+            @foreach (var node in Data.Nodes)
+            {
+                var nColor = node.Color;
+                var nSelected = selectedNodeId == node.Id;
+                var nStrokeW = nSelected ? "3" : "2";
+                var nFilter = node.IsWarning ? $"url(#{$"glow-{containerId}"})" : "";
+                var nCostW = Math.Max(0, (node.Width - 20) * node.CostPercentage / 100);
+                var nLabelX = node.X + node.Width / 2;
+                var nLabelY = node.Y + 24;
+                var nCostLabelY = node.Y + 42;
+                var nCostText = node.CostPercentage > 0 ? $"{node.CostPercentage:F0}%" : "";
+                var nRowsText = node.EstimatedRows > 0 ? $" | {FormatRows(node.EstimatedRows)} rows" : "";
+                var nBarY = node.Y + node.Height - 18;
+
+                <g class="flow-node @(nSelected ? "flow-node-selected" : "")"
+                   @onclick="() => SelectNode(node)"
+                   @onmouseenter="() => HoverNode(node.Id)"
+                   @onmouseleave="() => HoverNode(-1)"
+                   style="cursor: pointer;">
+                    <rect x="@node.X" y="@node.Y" width="@node.Width" height="@node.Height"
+                          rx="10" ry="10"
+                          fill="var(--bg-card)" stroke="@nColor" stroke-width="@nStrokeW"
+                          filter="@nFilter" />
+
+                    @if (node.IsWarning)
+                    {
+                        <circle cx="@(node.X + node.Width - 8)" cy="@(node.Y + 8)" r="6"
+                                fill="@nColor" opacity="0.9">
+                            <animate attributeName="opacity" values="0.9;0.4;0.9" dur="1.5s" repeatCount="indefinite"/>
+                        </circle>
+                        @RenderSvgText(node.X + node.Width - 8, node.Y + 12, "", "white", "9", "bold", "!")
+                    }
+
+                    <rect x="@(node.X + 10)" y="@nBarY" width="@(node.Width - 20)" height="6" rx="3" fill="#21262d" />
+                    <rect x="@(node.X + 10)" y="@nBarY" width="@nCostW" height="6" rx="3" fill="@nColor" opacity="0.8">
+                        @if (node.CostPercentage > 30)
+                        {
+                            <animate attributeName="opacity" values="0.8;0.5;0.8" dur="2s" repeatCount="indefinite"/>
+                        }
+                    </rect>
+
+                    @RenderSvgText(nLabelX, nLabelY, "node-label", "var(--text-primary)", "12", "600", TruncateLabel(node.Label, 18))
+                    @RenderSvgText(nLabelX, nCostLabelY, "", nColor, "11", "500", $"{nCostText}{nRowsText}")
+                </g>
+            }
+        </svg>
+    }
+</div>
+
+@code {
+    [Parameter] public FlowDiagramData? Data { get; set; }
+    [Parameter] public EventCallback<FlowNode> OnNodeSelected { get; set; }
+    [Parameter] public EventCallback OnAnimationComplete { get; set; }
+
+    private string containerId = $"flow-{Guid.NewGuid():N}";
+    private int selectedNodeId = -1;
+    private int hoveredNodeId = -1;
+    private double animationSpeed = 1.0;
+    private FlowDiagramData? previousData;
+    private DotNetObjectReference<FlowDiagram>? dotNetRef;
+
+    private RenderFragment RenderSvgText(double x, double y, string cssClass, string fill, string fontSize, string fontWeight, string content) => builder =>
+    {
+        builder.OpenElement(0, "text");
+        builder.AddAttribute(1, "x", x.ToString("F0"));
+        builder.AddAttribute(2, "y", y.ToString("F0"));
+        builder.AddAttribute(3, "text-anchor", "middle");
+        builder.AddAttribute(4, "fill", fill);
+        builder.AddAttribute(5, "font-size", fontSize);
+        if (!string.IsNullOrEmpty(fontWeight))
+            builder.AddAttribute(6, "font-weight", fontWeight);
+        if (!string.IsNullOrEmpty(cssClass))
+            builder.AddAttribute(7, "class", cssClass);
+        builder.AddContent(8, content);
+        builder.CloseElement();
+    };
+
+    protected override void OnInitialized()
+    {
+        dotNetRef = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Data != null && (firstRender || Data != previousData))
+        {
+            previousData = Data;
+            await Task.Delay(100);
+            try
+            {
+                await JS.InvokeVoidAsync("liveSqlFlow.initFlowDiagram", containerId);
+            }
+            catch (JSException) { }
+        }
+    }
+
+    [JSInvokable]
+    public async Task AnimationFinished()
+    {
+        await OnAnimationComplete.InvokeAsync();
+    }
+
+    private void SelectNode(FlowNode node)
+    {
+        selectedNodeId = node.Id;
+        OnNodeSelected.InvokeAsync(node);
+    }
+
+    private void HoverNode(int nodeId) => hoveredNodeId = nodeId;
+
+    public async Task PlayAnimation(double speed)
+    {
+        animationSpeed = speed;
+        try
+        {
+            await JS.InvokeVoidAsync("liveSqlFlow.playAnimation", containerId, speed, dotNetRef);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task PauseAnimation()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("liveSqlFlow.pauseAnimation", containerId);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task StepForward()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("liveSqlFlow.stepForward", containerId);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task StepBackward()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("liveSqlFlow.stepBackward", containerId);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task ShowAll()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("liveSqlFlow.showAll", containerId);
+        }
+        catch (JSException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        dotNetRef?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    private static string FormatRows(double rows)
+    {
+        if (rows >= 1_000_000) return $"{rows / 1_000_000:F1}M";
+        if (rows >= 1_000) return $"{rows / 1_000:F1}K";
+        return rows.ToString("F0");
+    }
+
+    private static string TruncateLabel(string label, int max)
+    {
+        return label.Length > max ? label[..(max - 2)] + ".." : label;
+    }
+}

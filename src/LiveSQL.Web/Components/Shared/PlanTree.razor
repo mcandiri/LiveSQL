@@ -1,0 +1,16 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="plan-tree">
+    @foreach (var node in RootNodes)
+    {
+        <PlanTreeNode Node="@node" AllNodes="@Nodes" OnNodeSelected="@OnNodeSelected" Depth="0" />
+    }
+</div>
+
+@code {
+    [Parameter] public List<FlowNode> Nodes { get; set; } = new();
+    [Parameter] public EventCallback<FlowNode> OnNodeSelected { get; set; }
+
+    private IEnumerable<FlowNode> RootNodes =>
+        Nodes.Where(n => !Nodes.Any(p => p.ChildIds.Contains(n.Id)));
+}

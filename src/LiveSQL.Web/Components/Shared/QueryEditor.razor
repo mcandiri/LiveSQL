@@ -1,0 +1,27 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="query-editor">
+    <div class="query-editor-header">
+        <span class="query-editor-label">SQL Query</span>
+        <span class="query-editor-hint">Ctrl+Enter to analyze</span>
+    </div>
+    <div class="query-editor-body">
+        <textarea class="query-textarea"
+                  @bind="Sql"
+                  @bind:event="oninput"
+                  @bind:after="NotifyChanged"
+                  placeholder="SELECT * FROM ..."
+                  spellcheck="false"
+                  rows="6"></textarea>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Sql { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SqlChanged { get; set; }
+
+    private async Task NotifyChanged()
+    {
+        await SqlChanged.InvokeAsync(Sql);
+    }
+}

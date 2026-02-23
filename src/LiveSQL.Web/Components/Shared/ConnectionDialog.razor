@@ -1,0 +1,64 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="connection-dialog">
+    @if (!IsConnected)
+    {
+        @if (showForm)
+        {
+            <div class="connection-form">
+                <select class="form-select-dark conn-select" @bind="provider">
+                    <option value="SqlServer">SQL Server</option>
+                    <option value="PostgreSql">PostgreSQL</option>
+                </select>
+                <input type="text" class="form-input-dark" placeholder="Connection string..."
+                       @bind="connectionString" />
+                <div class="connection-form-actions">
+                    <button class="btn-sm btn-connect" @onclick="Connect">Connect</button>
+                    <button class="btn-sm btn-cancel" @onclick="() => showForm = false">Cancel</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <button class="btn-sm btn-outline-connect" @onclick="() => showForm = true">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                </svg>
+                Connect DB
+            </button>
+        }
+    }
+    else
+    {
+        <div class="connection-status">
+            <span class="connection-dot"></span>
+            <span>@ConnectionName</span>
+            <button class="btn-sm btn-disconnect" @onclick="Disconnect">Disconnect</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public bool IsConnected { get; set; }
+    [Parameter] public string ConnectionName { get; set; } = "";
+    [Parameter] public EventCallback<string> OnConnect { get; set; }
+
+    private bool showForm;
+    private string provider = "SqlServer";
+    private string connectionString = "";
+
+    private async Task Connect()
+    {
+        if (!string.IsNullOrWhiteSpace(connectionString))
+        {
+            await OnConnect.InvokeAsync(connectionString);
+            showForm = false;
+        }
+    }
+
+    private async Task Disconnect()
+    {
+        connectionString = "";
+        await OnConnect.InvokeAsync("");
+    }
+}

@@ -1,0 +1,46 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="plan-tree-item" style="padding-left: @(Depth * 16 + 4)px;">
+    <button class="plan-tree-toggle" @onclick="Toggle">
+        @if (HasChildren)
+        {
+            <span class="tree-arrow @(isExpanded ? "tree-arrow-expanded" : "")">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                </svg>
+            </span>
+        }
+        else
+        {
+            <span class="tree-spacer"></span>
+        }
+        <span class="tree-dot" style="background: @Node.Color;"></span>
+        <span class="tree-label" @onclick="SelectNode" @onclick:stopPropagation="true">@Node.Label</span>
+        @if (Node.CostPercentage > 0)
+        {
+            <span class="tree-cost" style="color: @Node.Color;">@Node.CostPercentage.ToString("F0")%</span>
+        }
+    </button>
+
+    @if (isExpanded && HasChildren)
+    {
+        @foreach (var child in Children)
+        {
+            <PlanTreeNode Node="@child" AllNodes="@AllNodes" OnNodeSelected="@OnNodeSelected" Depth="@(Depth + 1)" />
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FlowNode Node { get; set; } = default!;
+    [Parameter] public List<FlowNode> AllNodes { get; set; } = new();
+    [Parameter] public EventCallback<FlowNode> OnNodeSelected { get; set; }
+    [Parameter] public int Depth { get; set; }
+
+    private bool isExpanded = true;
+    private bool HasChildren => Node.ChildIds.Count > 0;
+    private IEnumerable<FlowNode> Children => AllNodes.Where(n => Node.ChildIds.Contains(n.Id));
+
+    private void Toggle() => isExpanded = !isExpanded;
+    private void SelectNode() => OnNodeSelected.InvokeAsync(Node);
+}

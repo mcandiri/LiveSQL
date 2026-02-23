@@ -1,0 +1,89 @@
+@namespace LiveSQL.Web.Components.Shared
+
+<div class="operation-card">
+    <div class="operation-card-header">
+        <div class="operation-card-icon" style="border-color: @Node.Color;">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="@Node.Color">
+                @switch (Node.Icon)
+                {
+                    case "scan":
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z"/>
+                        break;
+                    case "seek":
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        break;
+                    case "join":
+                        <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/>
+                        break;
+                    case "sort":
+                        <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zm0 4a1 1 0 000 2h7a1 1 0 100-2H3zm0 4a1 1 0 100 2h4a1 1 0 100-2H3z"/>
+                        break;
+                    default:
+                        <circle cx="10" cy="10" r="8"/>
+                        break;
+                }
+            </svg>
+        </div>
+        <div>
+            <div class="operation-card-name">@Node.Label</div>
+            <div class="operation-card-type">@Node.NodeTypeName</div>
+        </div>
+    </div>
+
+    @if (Node.IsWarning)
+    {
+        <div class="operation-warning">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            @Node.WarningMessage
+        </div>
+    }
+
+    <div class="operation-details">
+        <div class="operation-detail-row">
+            <span class="detail-label">Cost</span>
+            <span class="detail-value">@Node.TotalCost.ToString("F3")</span>
+        </div>
+        <div class="operation-detail-row">
+            <span class="detail-label">Cost %</span>
+            <div class="detail-value" style="display: flex; align-items: center; gap: 8px;">
+                <CostBar Percentage="@Node.CostPercentage" Color="@Node.Color" />
+                <span>@Node.CostPercentage.ToString("F0")%</span>
+            </div>
+        </div>
+        <div class="operation-detail-row">
+            <span class="detail-label">Est. Rows</span>
+            <span class="detail-value">@Node.EstimatedRows.ToString("N0")</span>
+        </div>
+        <div class="operation-detail-row">
+            <span class="detail-label">Actual Rows</span>
+            <span class="detail-value">@Node.ActualRows.ToString("N0")</span>
+        </div>
+        @if (!string.IsNullOrEmpty(Node.TableName))
+        {
+            <div class="operation-detail-row">
+                <span class="detail-label">Table</span>
+                <span class="detail-value detail-mono">@Node.TableName</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Node.IndexName))
+        {
+            <div class="operation-detail-row">
+                <span class="detail-label">Index</span>
+                <span class="detail-value detail-mono">@Node.IndexName</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Node.Predicate))
+        {
+            <div class="operation-detail-row">
+                <span class="detail-label">Predicate</span>
+                <span class="detail-value detail-mono">@Node.Predicate</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FlowNode Node { get; set; } = default!;
+}

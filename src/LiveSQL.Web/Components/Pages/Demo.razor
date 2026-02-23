@@ -1,0 +1,201 @@
+@page "/demo"
+@inject DemoDataService DemoService
+
+<PageTitle>Demo - LiveSQL</PageTitle>
+
+<div class="demo-page">
+    <div class="demo-header">
+        <h1>Demo Plans</h1>
+        <p class="demo-subtitle">Explore pre-built execution plan visualizations. Click a card to see the animated flow diagram.</p>
+    </div>
+
+    @if (selectedPlan == null)
+    {
+        <div class="demo-grid">
+            @foreach (var plan in demoPlans)
+            {
+                <div class="demo-card" @onclick="() => SelectPlan(plan)">
+                    <div class="demo-card-header">
+                        <span class="demo-card-category">@plan.Category</span>
+                    </div>
+                    <h3 class="demo-card-title">@plan.Title</h3>
+                    <p class="demo-card-desc">@plan.Description</p>
+                    <div class="demo-card-sql">
+                        <code>@plan.Sql</code>
+                    </div>
+                    <div class="demo-card-metrics">
+                        <div class="demo-metric">
+                            <span class="demo-metric-value">@plan.Metrics.TotalCost.ToString("F2")</span>
+                            <span class="demo-metric-label">Cost</span>
+                        </div>
+                        <div class="demo-metric">
+                            <span class="demo-metric-value">@plan.Metrics.ElapsedMs.ToString("F0")ms</span>
+                            <span class="demo-metric-label">Time</span>
+                        </div>
+                        <div class="demo-metric">
+                            <span class="demo-metric-value">@plan.Metrics.RowsReturned.ToString("N0")</span>
+                            <span class="demo-metric-label">Rows</span>
+                        </div>
+                        <div class="demo-metric">
+                            <span class="demo-metric-value">@plan.Metrics.OperatorCount</span>
+                            <span class="demo-metric-label">Ops</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="demo-back-bar">
+            <button class="btn-back" @onclick="ClearSelection">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                </svg>
+                Back to Demo Plans
+            </button>
+            <span class="demo-selected-title">@selectedPlan.Title</span>
+        </div>
+
+        <div class="viz-controls-bar">
+            <AnimationControls OnPlay="OnPlay" OnPause="OnPause" OnStepForward="OnStepForward"
+                               OnStepBackward="OnStepBackward" OnShowAll="OnShowAll"
+                               Speed="@animSpeed" SpeedChanged="OnSpeedChanged"
+                               IsPlaying="@isPlaying" />
+        </div>
+
+        <div class="demo-visualization">
+            <div class="demo-viz-main">
+                <FlowDiagram Data="@flowData" OnNodeSelected="OnNodeSelected" OnAnimationComplete="OnAnimationDone" @ref="flowDiagramRef" />
+            </div>
+            <div class="demo-viz-sidebar">
+                <MetricsPanel Metrics="@selectedPlan.Metrics" Nodes="@(flowData?.Nodes ?? new())" />
+
+                @if (selectedNode != null)
+                {
+                    <OperationCard Node="@selectedNode" />
+                }
+
+                @if (bottlenecks.Count > 0)
+                {
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-section-title">Bottleneck Alerts</h3>
+                        @foreach (var alert in bottlenecks)
+                        {
+                            <BottleneckAlertCard Alert="@alert" />
+                        }
+                    </div>
+                }
+
+                @if (indexSuggestions.Count > 0)
+                {
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-section-title">Index Suggestions</h3>
+                        @foreach (var suggestion in indexSuggestions)
+                        {
+                            <IndexSuggestion Suggestion="@suggestion" />
+                        }
+                    </div>
+                }
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-section-title">SQL Query</h3>
+                    <div class="demo-sql-block">
+                        <code>@selectedPlan.Sql</code>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-section-title">Plan Tree</h3>
+                    @if (flowData != null)
+                    {
+                        <PlanTree Nodes="@flowData.Nodes" OnNodeSelected="OnNodeSelected" />
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<DemoPlan> demoPlans = new();
+    private DemoPlan? selectedPlan;
+    private FlowDiagramData? flowData;
+    private FlowNode? selectedNode;
+    private FlowDiagram? flowDiagramRef;
+    private bool isPlaying;
+    private double animSpeed = 1.0;
+    private List<BottleneckAlert> bottlenecks = new();
+    private List<IndexSuggestionData> indexSuggestions = new();
+
+    protected override void OnInitialized()
+    {
+        demoPlans = DemoService.GetDemoPlans();
+    }
+
+    private void SelectPlan(DemoPlan plan)
+    {
+        selectedPlan = plan;
+        flowData = DemoService.BuildFlowDiagram(plan.Id);
+        var (b, s) = DemoService.GetAnalysis(plan.Id);
+        bottlenecks = b;
+        indexSuggestions = s;
+        selectedNode = null;
+    }
+
+    private void ClearSelection()
+    {
+        selectedPlan = null;
+        flowData = null;
+        selectedNode = null;
+        bottlenecks = new();
+        indexSuggestions = new();
+    }
+
+    private void OnNodeSelected(FlowNode node)
+    {
+        selectedNode = node;
+        StateHasChanged();
+    }
+
+    private async Task OnPlay()
+    {
+        isPlaying = true;
+        if (flowDiagramRef != null)
+            await flowDiagramRef.PlayAnimation(animSpeed);
+    }
+
+    private async Task OnPause()
+    {
+        isPlaying = false;
+        if (flowDiagramRef != null)
+            await flowDiagramRef.PauseAnimation();
+    }
+
+    private async Task OnStepForward()
+    {
+        if (flowDiagramRef != null) await flowDiagramRef.StepForward();
+    }
+
+    private async Task OnStepBackward()
+    {
+        if (flowDiagramRef != null) await flowDiagramRef.StepBackward();
+    }
+
+    private async Task OnShowAll()
+    {
+        isPlaying = false;
+        if (flowDiagramRef != null) await flowDiagramRef.ShowAll();
+    }
+
+    private void OnAnimationDone()
+    {
+        isPlaying = false;
+        StateHasChanged();
+    }
+
+    private void OnSpeedChanged(double speed)
+    {
+        animSpeed = speed;
+    }
+}

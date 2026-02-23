@@ -1,0 +1,183 @@
+@page "/"
+
+<PageTitle>LiveSQL - SQL Execution Plan Visualizer</PageTitle>
+
+<div class="home-page">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-content">
+            <div class="hero-badge">Open Source SQL Tool</div>
+            <h1 class="hero-title">
+                Visualize Your <span class="gradient-text">SQL Execution Plans</span>
+            </h1>
+            <p class="hero-subtitle">
+                Understand query performance at a glance. LiveSQL transforms complex execution plans
+                into interactive, animated flow diagrams with bottleneck detection and index recommendations.
+            </p>
+            <div class="hero-actions">
+                <a href="/demo" class="btn-primary-lg">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                    </svg>
+                    Try Demo
+                </a>
+                <a href="/visualizer" class="btn-secondary-lg">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd"/>
+                    </svg>
+                    Connect Database
+                </a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-diagram">
+                <svg viewBox="0 0 400 280" class="hero-svg">
+                    <!-- Edges with animated dots -->
+                    <line x1="200" y1="60" x2="120" y2="130" stroke="#30363d" stroke-width="2"/>
+                    <line x1="200" y1="60" x2="280" y2="130" stroke="#30363d" stroke-width="2"/>
+                    <line x1="120" y1="170" x2="80" y2="230" stroke="#30363d" stroke-width="2"/>
+                    <line x1="120" y1="170" x2="160" y2="230" stroke="#30363d" stroke-width="2"/>
+                    <line x1="280" y1="170" x2="280" y2="230" stroke="#30363d" stroke-width="2"/>
+                    <!-- Animated dots -->
+                    <circle r="3" fill="#58a6ff">
+                        <animateMotion dur="2s" repeatCount="indefinite" path="M120,170 L200,60" />
+                    </circle>
+                    <circle r="3" fill="#3fb950">
+                        <animateMotion dur="2s" repeatCount="indefinite" begin="0.3s" path="M280,170 L200,60" />
+                    </circle>
+                    <circle r="3" fill="#d29922">
+                        <animateMotion dur="2.5s" repeatCount="indefinite" begin="0.6s" path="M80,230 L120,170" />
+                    </circle>
+                    <circle r="3" fill="#f85149">
+                        <animateMotion dur="2.5s" repeatCount="indefinite" begin="0.9s" path="M160,230 L120,170" />
+                    </circle>
+                    <circle r="3" fill="#58a6ff">
+                        <animateMotion dur="2.5s" repeatCount="indefinite" begin="1.2s" path="M280,230 L280,170" />
+                    </circle>
+                    <!-- Nodes -->
+                    <g class="hero-node">
+                        <rect x="155" y="30" width="90" height="40" rx="8" fill="#1c2128" stroke="#58a6ff" stroke-width="2"/>
+                        <text x="200" y="55" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="600">SELECT</text>
+                    </g>
+                    <g class="hero-node">
+                        <rect x="70" y="130" width="100" height="40" rx="8" fill="#1c2128" stroke="#3fb950" stroke-width="2"/>
+                        <text x="120" y="155" text-anchor="middle" fill="#e6edf3" font-size="11" font-weight="500">Hash Join</text>
+                    </g>
+                    <g class="hero-node">
+                        <rect x="230" y="130" width="100" height="40" rx="8" fill="#1c2128" stroke="#d29922" stroke-width="2"/>
+                        <text x="280" y="155" text-anchor="middle" fill="#e6edf3" font-size="11" font-weight="500">Sort</text>
+                    </g>
+                    <g class="hero-node">
+                        <rect x="30" y="220" width="100" height="40" rx="8" fill="#1c2128" stroke="#f85149" stroke-width="2"/>
+                        <text x="80" y="245" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="500">Table Scan</text>
+                    </g>
+                    <g class="hero-node">
+                        <rect x="138" y="220" width="100" height="40" rx="8" fill="#1c2128" stroke="#3fb950" stroke-width="2"/>
+                        <text x="188" y="245" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="500">Index Seek</text>
+                    </g>
+                    <g class="hero-node">
+                        <rect x="250" y="220" width="100" height="40" rx="8" fill="#1c2128" stroke="#db6d28" stroke-width="2"/>
+                        <text x="300" y="245" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="500">Idx Scan</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">Why LiveSQL?</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h3>Animated Flow Diagrams</h3>
+                <p>Watch data flow through your query plan in real-time. Nodes light up in execution order with animated data paths.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-red">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h3>Bottleneck Detection</h3>
+                <p>Automatically identifies expensive operations, table scans, sort spills, and other performance killers.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <h3>Index Suggestions</h3>
+                <p>Get actionable CREATE INDEX statements. See estimated improvement percentages before you change anything.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                </div>
+                <h3>Plan Comparison</h3>
+                <p>Compare two execution plans side by side. See exactly what changed after adding an index or rewriting a query.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                    </svg>
+                </div>
+                <h3>Multi-Database</h3>
+                <p>Supports SQL Server and PostgreSQL. Connect to any database and get instant plan visualization.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon feature-icon-yellow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h3>Real-Time Analysis</h3>
+                <p>Paste your SQL, hit Analyze, and see the execution plan rendered instantly. No configuration needed.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Write or Paste SQL</h3>
+                    <p>Enter your query in the built-in editor with syntax highlighting.</p>
+                </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Analyze</h3>
+                    <p>LiveSQL fetches the execution plan from your database and parses every operator.</p>
+                </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Visualize</h3>
+                    <p>See an animated flow diagram with cost breakdowns, warnings, and optimization tips.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

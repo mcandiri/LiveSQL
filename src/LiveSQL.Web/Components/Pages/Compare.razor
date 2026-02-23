@@ -1,0 +1,168 @@
+@page "/compare"
+@inject DemoDataService DemoService
+
+<PageTitle>Compare Plans - LiveSQL</PageTitle>
+
+<div class="compare-page">
+    <div class="compare-header">
+        <h1>Plan Comparison</h1>
+        <p class="compare-subtitle">Compare two execution plans side by side to see the impact of your optimizations.</p>
+    </div>
+
+    <div class="compare-selectors">
+        <div class="compare-select-group">
+            <label>Plan A (Before)</label>
+            <select class="form-select-dark" @onchange="OnPlanAChanged">
+                <option value="">Select a plan...</option>
+                @foreach (var plan in demoPlans)
+                {
+                    <option value="@plan.Id">@plan.Title</option>
+                }
+            </select>
+        </div>
+        <div class="compare-vs">VS</div>
+        <div class="compare-select-group">
+            <label>Plan B (After)</label>
+            <select class="form-select-dark" @onchange="OnPlanBChanged">
+                <option value="">Select a plan...</option>
+                @foreach (var plan in demoPlans)
+                {
+                    <option value="@plan.Id">@plan.Title</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (planA != null && planB != null)
+    {
+        <!-- Metrics Comparison Table -->
+        <div class="compare-metrics-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Plan A</th>
+                        <th>Plan B</th>
+                        <th>Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Total Cost</td>
+                        <td>@planAMetrics.TotalCost.ToString("F2")</td>
+                        <td>@planBMetrics.TotalCost.ToString("F2")</td>
+                        <td class="@CostChangeClass(planAMetrics.TotalCost, planBMetrics.TotalCost)">
+                            @CostChangeText(planAMetrics.TotalCost, planBMetrics.TotalCost)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Elapsed Time (ms)</td>
+                        <td>@planAMetrics.ElapsedMs.ToString("F0")</td>
+                        <td>@planBMetrics.ElapsedMs.ToString("F0")</td>
+                        <td class="@CostChangeClass(planAMetrics.ElapsedMs, planBMetrics.ElapsedMs)">
+                            @CostChangeText(planAMetrics.ElapsedMs, planBMetrics.ElapsedMs)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Rows Returned</td>
+                        <td>@planAMetrics.RowsReturned.ToString("N0")</td>
+                        <td>@planBMetrics.RowsReturned.ToString("N0")</td>
+                        <td>@((planBMetrics.RowsReturned - planAMetrics.RowsReturned).ToString("N0"))</td>
+                    </tr>
+                    <tr>
+                        <td>Operators</td>
+                        <td>@planAMetrics.OperatorCount</td>
+                        <td>@planBMetrics.OperatorCount</td>
+                        <td>@(planBMetrics.OperatorCount - planAMetrics.OperatorCount)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Side-by-side Diagrams -->
+        <div class="compare-diagrams">
+            <div class="compare-diagram-panel">
+                <h3 class="compare-panel-title">Plan A: @planATitle</h3>
+                <FlowDiagram Data="@flowDataA" OnNodeSelected="n => {}" />
+            </div>
+            <div class="compare-divider"></div>
+            <div class="compare-diagram-panel">
+                <h3 class="compare-panel-title">Plan B: @planBTitle</h3>
+                <FlowDiagram Data="@flowDataB" OnNodeSelected="n => {}" />
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="compare-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            <p>Select two plans above to see a side-by-side comparison.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<DemoPlan> demoPlans = new();
+    private DemoPlan? planA;
+    private DemoPlan? planB;
+    private FlowDiagramData? flowDataA;
+    private FlowDiagramData? flowDataB;
+    private DemoPlanMetrics planAMetrics = new();
+    private DemoPlanMetrics planBMetrics = new();
+    private string planATitle = "";
+    private string planBTitle = "";
+
+    protected override void OnInitialized()
+    {
+        demoPlans = DemoService.GetDemoPlans();
+    }
+
+    private void OnPlanAChanged(ChangeEventArgs e)
+    {
+        var id = e.Value?.ToString() ?? "";
+        planA = demoPlans.FirstOrDefault(p => p.Id == id);
+        if (planA != null)
+        {
+            flowDataA = DemoService.BuildFlowDiagram(id);
+            planAMetrics = planA.Metrics;
+            planATitle = planA.Title;
+        }
+        else
+        {
+            flowDataA = null;
+        }
+    }
+
+    private void OnPlanBChanged(ChangeEventArgs e)
+    {
+        var id = e.Value?.ToString() ?? "";
+        planB = demoPlans.FirstOrDefault(p => p.Id == id);
+        if (planB != null)
+        {
+            flowDataB = DemoService.BuildFlowDiagram(id);
+            planBMetrics = planB.Metrics;
+            planBTitle = planB.Title;
+        }
+        else
+        {
+            flowDataB = null;
+        }
+    }
+
+    private string CostChangeClass(double a, double b)
+    {
+        if (b < a) return "change-good";
+        if (b > a) return "change-bad";
+        return "change-neutral";
+    }
+
+    private string CostChangeText(double a, double b)
+    {
+        if (a == 0) return "N/A";
+        var pct = ((b - a) / a) * 100;
+        var sign = pct >= 0 ? "+" : "";
+        return $"{sign}{pct:F1}%";
+    }
+}
