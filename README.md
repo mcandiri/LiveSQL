@@ -4,7 +4,8 @@
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/livesql/livesql/actions/workflows/ci.yml/badge.svg)](https://github.com/livesql/livesql/actions/workflows/ci.yml)
+[![CI](https://github.com/mcandiri/LiveSQL/actions/workflows/ci.yml/badge.svg)](https://github.com/mcandiri/LiveSQL/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-91%20passing-3fb950?logo=checkmarx)](https://github.com/mcandiri/LiveSQL)
 
 ---
 
@@ -143,8 +144,8 @@ Blazor UI                   Interactive plan viewer with animations
 ### Quick Start
 
 ```bash
-git clone https://github.com/livesql/livesql.git
-cd livesql/LiveSQL
+git clone https://github.com/mcandiri/LiveSQL.git
+cd LiveSQL
 dotnet build
 dotnet run --project src/LiveSQL.Web
 ```
